@@ -9,6 +9,7 @@ use super::shell;
 pub(super) fn handle_shell_notification_effects(
     effects: Vec<shell::ClientShellNotificationEffect>,
     sound_config: &crate::config::SoundConfig,
+    #[cfg(windows)] event_tx: &tokio::sync::mpsc::Sender<super::events::ClientLoopEvent>,
 ) {
     for effect in effects {
         match effect {
@@ -24,15 +25,59 @@ pub(super) fn handle_shell_notification_effects(
                     warn!(err = %err, "failed to emit terminal notification");
                 }
             }
-            shell::ClientShellNotificationEffect::System { title, body } => {
-                if let Err(err) =
-                    crate::platform::show_desktop_notification(&title, body.as_deref())
-                {
+            shell::ClientShellNotificationEffect::System {
+                title,
+                body,
+                #[cfg(windows)]
+                target,
+            } => {
+                #[cfg(windows)]
+                let result = show_system_notification(&title, body.as_deref(), target, event_tx);
+                #[cfg(not(windows))]
+                let result = crate::platform::show_desktop_notification(&title, body.as_deref());
+                if let Err(err) = result {
                     warn!(err = %err, "failed to emit system notification");
                 }
             }
         }
     }
+}
+
+#[cfg(windows)]
+fn show_system_notification(
+    title: &str,
+    body: Option<&str>,
+    target: Option<shell::ClientSystemNotificationTarget>,
+    event_tx: &tokio::sync::mpsc::Sender<super::events::ClientLoopEvent>,
+) -> io::Result<bool> {
+    let Some(target) = target else {
+        return crate::platform::show_desktop_notification(title, body);
+    };
+    let key = serde_json::to_string(&(
+        &target.endpoint_id.storage_key(),
+        &target.boot_id,
+        &target.pane_id,
+    ))
+    .map_err(io::Error::other)?;
+    let event_tx = event_tx.clone();
+    let runtime = tokio::runtime::Handle::current();
+    crate::platform::show_actionable_desktop_notification(
+        title,
+        body,
+        key,
+        std::sync::Arc::new(move || {
+            let event_tx = event_tx.clone();
+            let target = target.clone();
+            // Never block a native callback: WinRT can dispatch it while Show is awaited.
+            runtime.spawn(async move {
+                let _ = event_tx
+                    .send(super::events::ClientLoopEvent::NotificationActivated(
+                        target,
+                    ))
+                    .await;
+            });
+        }),
+    )
 }
 
 pub(super) fn handle_notify(
