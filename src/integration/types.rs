@@ -53,6 +53,11 @@ pub(crate) struct KiloInstallPaths {
 }
 
 #[derive(Debug)]
+pub(crate) struct MimocodeInstallPaths {
+    pub plugin_path: PathBuf,
+}
+
+#[derive(Debug)]
 pub(crate) struct OmpInstallPaths {
     pub extension_path: PathBuf,
     pub removed_legacy_pi_extension: bool,
@@ -266,6 +271,12 @@ pub(crate) struct OpenCodeUninstallResult {
 
 #[derive(Debug)]
 pub(crate) struct KiloUninstallResult {
+    pub plugin_path: PathBuf,
+    pub removed_plugin: bool,
+}
+
+#[derive(Debug)]
+pub(crate) struct MimocodeUninstallResult {
     pub plugin_path: PathBuf,
     pub removed_plugin: bool,
 }

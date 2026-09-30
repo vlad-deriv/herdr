@@ -1,0 +1,13 @@
+id = "mimocode"
+version = "2026.09.29.1"
+min_engine_version = 1
+updated_at = "2026-09-29T00:00:00Z"
+aliases = ["mimo-code"]
+
+# Placeholder while live MiMoCode screen evidence is captured. Never matches.
+[[rules]]
+id = "placeholder"
+state = "unknown"
+priority = 1
+region = "whole_recent"
+contains = ["herdr-mimocode-placeholder-never-matches"]

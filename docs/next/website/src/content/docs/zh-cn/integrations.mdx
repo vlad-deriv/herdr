@@ -1,6 +1,6 @@
 ---
 title: 集成
-description: 为 Pi、OMP、Claude Code、Codex、GitHub Copilot CLI、Devin CLI、Droid、Kimi Code CLI、OpenCode、Kilo Code CLI、Hermes Agent、Qoder CLI、Qwen Code、Letta Code、Cursor Agent CLI、MastraCode、Antigravity CLI 和 Grok CLI 安装 Herdr 集成。
+description: 为 Pi、OMP、Claude Code、Codex、GitHub Copilot CLI、Devin CLI、Droid、Kimi Code CLI、OpenCode、Kilo Code CLI、Hermes Agent、Qoder CLI、Qwen Code、Letta Code、Cursor Agent CLI、MastraCode、Antigravity CLI、Grok CLI 和 MiMo Code CLI 安装 Herdr 集成。
 ---
 
 Herdr 自动检测受支持的智能体。官方集成可以额外提供用于恢复的原生会话身份、生命周期状态上报,或两者兼有。
@@ -30,6 +30,7 @@ herdr integration install letta
 herdr integration install cursor
 herdr integration install antigravity-cli
 herdr integration install grok
+herdr integration install mimocode
 ```
 
 ## 卸载集成
@@ -53,6 +54,7 @@ herdr integration uninstall letta
 herdr integration uninstall cursor
 herdr integration uninstall antigravity-cli
 herdr integration uninstall grok
+herdr integration uninstall mimocode
 ```
 
 Herdr 对 Linux/macOS 上的集成配置和所有平台的新文件使用原子保存；Windows 上的现有文件先备份再原地更新，以保留权限。如果 Windows 提示存在备份，请在重试前关闭智能体并检查配置：未完成的 `.herdr-backup.pending` 只能在确认配置正确后删除，不能用于恢复；完整 `.herdr-backup` 的内容可在需要时写回现有文件（若文件已丢失，先设置其预期权限），确认配置正确后再删除备份。
@@ -63,7 +65,7 @@ Herdr 以两种不同方式使用集成:
 
 | 集成类型 | 智能体 | 效果 |
 | --- | --- | --- |
-| 生命周期权威 | Pi、OMP、Kimi Code CLI、OpenCode、Kilo Code CLI、MastraCode | 已安装且在为该窗格主动上报时,由钩子或插件事件决定 `idle`、`working` 和 `blocked`。对同一个生命周期权威,Herdr 不再使用屏幕清单兜底。 |
+| 生命周期权威 | Pi、OMP、Kimi Code CLI、OpenCode、Kilo Code CLI、MastraCode、MiMo Code CLI | 已安装且在为该窗格主动上报时,由钩子或插件事件决定 `idle`、`working` 和 `blocked`。对同一个生命周期权威,Herdr 不再使用屏幕清单兜底。 |
 | 会话身份 | Claude Code、Codex、GitHub Copilot CLI、Devin CLI、Droid、Qoder CLI、Qwen Code、Letta Code、Cursor Agent CLI、Hermes Agent、Antigravity CLI、Grok CLI | 集成上报用于恢复的原生会话引用。状态仍来自 Herdr 的屏幕清单检测。 |
 
 自定义集成在定义了原生终端 UI 中不可见的状态时,也可以上报状态。它们不需要内置到 Herdr 中,也不要求 Herdr 识别智能体的可执行文件。
@@ -337,6 +339,18 @@ herdr integration install grok
 Herdr 默认使用 `~/.grok`,设置了 `GROK_HOME` 时使用后者。Grok 配置目录必须已经存在。Grok 会合并该目录中的所有 `hooks/*.json` 文件,因此安装会写入独立的 `hooks/herdr.json`,其中包含 Herdr 的 `SessionStart` 条目,并同时写入 `hooks/herdr-agent-state.sh`（Windows 上为 `hooks/herdr-agent-state.ps1`）;它不会修改其他钩子文件。卸载只会删除这两个由 Herdr 管理的文件。
 
 Grok 发出会话启动事件后,Herdr 可以用上报的会话 id 通过 `grok --resume <id>` 恢复窗格。
+
+## MiMo Code CLI
+
+安装 MiMo Code 插件:
+
+```bash
+herdr integration install mimocode
+```
+
+MiMo Code 会自动加载其配置目录中的插件。Herdr 默认使用 `~/.config/mimocode`,设置 `MIMOCODE_CONFIG_DIR` 时使用该目录。该目录必须已存在。安装会写入 `plugins/herdr-agent-state.js`,卸载会删除它。安装后请重启 MiMo Code。
+
+当 `mimo run` 或本地 MiMo Code TUI 在 Herdr 窗格中运行时,该插件会上报生命周期状态和会话身份。MiMo Code 0.1.x 的完整 TUI 不会将会话事件分发给外部插件,也不会加载外部 TUI 插件,因此生命周期权威目前覆盖 `mimo run`,TUI 由 Herdr 的屏幕清单检测兜底。
 
 ## 自定义状态标签
 

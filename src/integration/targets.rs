@@ -23,7 +23,8 @@ use super::config_file::{check_config_targets, write_config};
 use super::env::{
     antigravity_cli_dir, claude_dir, codex_dir, copilot_dir, cursor_dir, devin_dir, droid_dir,
     grok_dir, hermes_dir, hermes_plugin_dir, kilo_dir, kimi_dir, letta_dir, mastracode_dir,
-    omp_extension_dir, opencode_dir, opencode_state_dir, pi_extension_dir, qodercli_dir, qwen_dir,
+    mimocode_dir, omp_extension_dir, opencode_dir, opencode_state_dir, pi_extension_dir,
+    qodercli_dir, qwen_dir,
 };
 use super::file_ops::{
     make_executable, remove_dir_all_if_exists, remove_file_if_exists, remove_legacy_bash_hook_file,
@@ -39,9 +40,10 @@ use super::types::{
     DevinUninstallResult, DroidInstallPaths, DroidUninstallResult, GrokInstallPaths,
     GrokUninstallResult, HermesInstallPaths, HermesUninstallResult, KiloInstallPaths,
     KiloUninstallResult, KimiInstallPaths, KimiUninstallResult, LettaInstallPaths,
-    LettaUninstallResult, MastracodeInstallPaths, MastracodeUninstallResult, OmpInstallPaths,
-    OmpUninstallResult, OpenCodeInstallPaths, OpenCodeUninstallResult, PiUninstallResult,
-    QodercliInstallPaths, QodercliUninstallResult, QwenInstallPaths, QwenUninstallResult,
+    LettaUninstallResult, MastracodeInstallPaths, MastracodeUninstallResult, MimocodeInstallPaths,
+    MimocodeUninstallResult, OmpInstallPaths, OmpUninstallResult, OpenCodeInstallPaths,
+    OpenCodeUninstallResult, PiUninstallResult, QodercliInstallPaths, QodercliUninstallResult,
+    QwenInstallPaths, QwenUninstallResult,
 };
 use super::{
     ANTIGRAVITY_CLI_HOOK_ASSET, ANTIGRAVITY_CLI_HOOK_BLOCK_NAME, ANTIGRAVITY_CLI_HOOK_EVENTS,
@@ -57,11 +59,12 @@ use super::{
     KIMI_HOOK_ASSET, KIMI_HOOK_INSTALL_NAME, LETTA_HOOK_ASSET, LETTA_HOOK_INSTALL_NAME,
     LETTA_HOOK_TIMEOUT_MS, MASTRACODE_HOOK_ASSET, MASTRACODE_HOOK_EVENTS,
     MASTRACODE_HOOK_INSTALL_NAME, MASTRACODE_HOOK_TIMEOUT_MS, MASTRACODE_REMOVED_HOOK_EVENTS,
-    OMP_EXTENSION_ASSET, OMP_EXTENSION_INSTALL_NAME, OPENCODE_PLUGIN_ASSET,
-    OPENCODE_PLUGIN_INSTALL_NAME, OPENCODE_TUI_PLUGIN_ASSET, OPENCODE_TUI_PLUGIN_INSTALL_NAME,
-    OPENCODE_TUI_PLUGIN_SPEC, PI_EXTENSION_ASSET, PI_EXTENSION_INSTALL_NAME, QODERCLI_HOOK_ASSET,
-    QODERCLI_HOOK_EVENTS, QODERCLI_HOOK_INSTALL_NAME, QODERCLI_REMOVED_LIFECYCLE_HOOK_EVENTS,
-    QWEN_HOOK_ASSET, QWEN_HOOK_EVENTS, QWEN_HOOK_INSTALL_NAME,
+    MIMOCODE_PLUGIN_ASSET, MIMOCODE_PLUGIN_INSTALL_NAME, OMP_EXTENSION_ASSET,
+    OMP_EXTENSION_INSTALL_NAME, OPENCODE_PLUGIN_ASSET, OPENCODE_PLUGIN_INSTALL_NAME,
+    OPENCODE_TUI_PLUGIN_ASSET, OPENCODE_TUI_PLUGIN_INSTALL_NAME, OPENCODE_TUI_PLUGIN_SPEC,
+    PI_EXTENSION_ASSET, PI_EXTENSION_INSTALL_NAME, QODERCLI_HOOK_ASSET, QODERCLI_HOOK_EVENTS,
+    QODERCLI_HOOK_INSTALL_NAME, QODERCLI_REMOVED_LIFECYCLE_HOOK_EVENTS, QWEN_HOOK_ASSET,
+    QWEN_HOOK_EVENTS, QWEN_HOOK_INSTALL_NAME,
 };
 
 fn ensure_extension_dir(dir: &Path, agent: &str) -> io::Result<()> {
@@ -513,6 +516,25 @@ pub(crate) fn install_kilo() -> io::Result<KiloInstallPaths> {
     Ok(KiloInstallPaths { plugin_path })
 }
 
+pub(crate) fn install_mimocode() -> io::Result<MimocodeInstallPaths> {
+    let dir = mimocode_dir()?;
+    if !dir.is_dir() {
+        return Err(io::Error::other(format!(
+            "mimocode config directory not found at {}. install mimocode first",
+            dir.display()
+        )));
+    }
+
+    // mimocode auto-loads plugins/*.{ts,js} from its config directory.
+    let plugins_dir = dir.join("plugins");
+    fs::create_dir_all(&plugins_dir)?;
+
+    let plugin_path = plugins_dir.join(MIMOCODE_PLUGIN_INSTALL_NAME);
+    fs::write(&plugin_path, MIMOCODE_PLUGIN_ASSET)?;
+
+    Ok(MimocodeInstallPaths { plugin_path })
+}
+
 pub(crate) fn install_hermes() -> io::Result<HermesInstallPaths> {
     let dir = hermes_dir()?;
     check_config_targets(&dir, &["config.yaml"])?;
@@ -891,6 +913,18 @@ pub(crate) fn uninstall_kilo() -> io::Result<KiloUninstallResult> {
     let removed_plugin = remove_file_if_exists(&plugin_path)?;
 
     Ok(KiloUninstallResult {
+        plugin_path,
+        removed_plugin,
+    })
+}
+
+pub(crate) fn uninstall_mimocode() -> io::Result<MimocodeUninstallResult> {
+    let plugin_path = mimocode_dir()?
+        .join("plugins")
+        .join(MIMOCODE_PLUGIN_INSTALL_NAME);
+    let removed_plugin = remove_file_if_exists(&plugin_path)?;
+
+    Ok(MimocodeUninstallResult {
         plugin_path,
         removed_plugin,
     })

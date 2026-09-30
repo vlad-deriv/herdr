@@ -2754,6 +2754,69 @@ fn install_kilo_writes_plugin_to_plugin_dir() {
 }
 
 #[test]
+fn install_mimocode_writes_plugin_to_plugins_dir() {
+    let _lock = integration_env_lock();
+    let base = unique_base();
+    let home = base.join("home");
+    let mimocode_dir = home.join(".config/mimocode");
+    fs::create_dir_all(&mimocode_dir).unwrap();
+    std::env::set_var("HOME", &home);
+
+    let installed = install_mimocode().unwrap();
+    let plugin_content = fs::read_to_string(&installed.plugin_path).unwrap();
+
+    assert_eq!(
+        installed.plugin_path,
+        mimocode_dir
+            .join("plugins")
+            .join(MIMOCODE_PLUGIN_INSTALL_NAME)
+    );
+    assert_eq!(plugin_content, MIMOCODE_PLUGIN_ASSET);
+
+    std::env::remove_var("HOME");
+    let _ = fs::remove_dir_all(base);
+}
+
+#[test]
+fn install_mimocode_requires_existing_config_dir() {
+    let _lock = integration_env_lock();
+    let base = unique_base();
+    let home = base.join("home");
+    fs::create_dir_all(&home).unwrap();
+    std::env::set_var("HOME", &home);
+
+    let error = install_mimocode().unwrap_err();
+
+    assert!(error.to_string().contains("install mimocode first"));
+
+    std::env::remove_var("HOME");
+    let _ = fs::remove_dir_all(base);
+}
+
+#[test]
+fn uninstall_mimocode_removes_plugin_when_present() {
+    let _lock = integration_env_lock();
+    let base = unique_base();
+    let home = base.join("home");
+    let mimocode_plugin_dir = home.join(".config/mimocode/plugins");
+    fs::create_dir_all(&mimocode_plugin_dir).unwrap();
+    fs::write(
+        mimocode_plugin_dir.join(MIMOCODE_PLUGIN_INSTALL_NAME),
+        MIMOCODE_PLUGIN_ASSET,
+    )
+    .unwrap();
+    std::env::set_var("HOME", &home);
+
+    let result = uninstall_mimocode().unwrap();
+
+    assert!(result.removed_plugin);
+    assert!(!result.plugin_path.exists());
+
+    std::env::remove_var("HOME");
+    let _ = fs::remove_dir_all(base);
+}
+
+#[test]
 fn uninstall_kilo_removes_plugin_when_present() {
     let _lock = integration_env_lock();
     let base = unique_base();

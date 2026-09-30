@@ -1,6 +1,6 @@
 ---
 title: インテグレーション
-description: Pi、OMP、Claude Code、Codex、GitHub Copilot CLI、Devin CLI、Droid、Kimi Code CLI、OpenCode、Kilo Code CLI、Hermes Agent、Qoder CLI、Qwen Code、Letta Code、Cursor Agent CLI、MastraCode、Antigravity CLI、Grok CLI 向けの Herdr インテグレーションをインストールします。
+description: Pi、OMP、Claude Code、Codex、GitHub Copilot CLI、Devin CLI、Droid、Kimi Code CLI、OpenCode、Kilo Code CLI、Hermes Agent、Qoder CLI、Qwen Code、Letta Code、Cursor Agent CLI、MastraCode、Antigravity CLI、Grok CLI、MiMo Code CLI 向けの Herdr インテグレーションをインストールします。
 ---
 
 Herdr は対応エージェントを自動的に検出します。公式インテグレーションは、復元のためのネイティブセッション識別、ライフサイクル状態の報告、またはその両方を追加できます。
@@ -30,6 +30,7 @@ herdr integration install letta
 herdr integration install cursor
 herdr integration install antigravity-cli
 herdr integration install grok
+herdr integration install mimocode
 ```
 
 ## インテグレーションをアンインストールする
@@ -53,6 +54,7 @@ herdr integration uninstall letta
 herdr integration uninstall cursor
 herdr integration uninstall antigravity-cli
 herdr integration uninstall grok
+herdr integration uninstall mimocode
 ```
 
 Herdr は Linux/macOS の統合設定と全プラットフォームの新規ファイルをアトミックに保存し、Windows の既存ファイルは権限を維持するため、バックアップ後に同じファイルを更新します。Windows でバックアップが通知された場合は、再試行前にエージェントを終了して設定を確認し、未完了の `.herdr-backup.pending` は復旧元に使わず設定が正しいことを確認してから削除するか、必要なら完成済みの `.herdr-backup` の内容を既存ファイルに書き戻し（ファイルがない場合は先に意図した権限を設定）、設定が正しいことを確認してからバックアップを削除してください。
@@ -63,7 +65,7 @@ Herdr はインテグレーションを 2 つの異なる方法で使います:
 
 | インテグレーションの種類 | エージェント | 効果 |
 | --- | --- | --- |
-| ライフサイクル権威 | Pi、OMP、Kimi Code CLI、OpenCode、Kilo Code CLI、MastraCode | インストールされ、そのペインについて能動的に報告している間は、フックまたはプラグインのイベントが `idle`、`working`、`blocked` を決定します。同じライフサイクル権威に対して、Herdr はスクリーンマニフェストのフォールバックを併用しません。 |
+| ライフサイクル権威 | Pi、OMP、Kimi Code CLI、OpenCode、Kilo Code CLI、MastraCode、MiMo Code CLI | インストールされ、そのペインについて能動的に報告している間は、フックまたはプラグインのイベントが `idle`、`working`、`blocked` を決定します。同じライフサイクル権威に対して、Herdr はスクリーンマニフェストのフォールバックを併用しません。 |
 | セッション識別 | Claude Code、Codex、GitHub Copilot CLI、Devin CLI、Droid、Qoder CLI、Qwen Code、Letta Code、Cursor Agent CLI、Hermes Agent、Antigravity CLI、Grok CLI | インテグレーションは復元用のネイティブセッション参照を報告します。状態は引き続き Herdr のスクリーンマニフェスト検出から得られます。 |
 
 カスタムインテグレーションも、ネイティブのターミナル UI では見えない状態を定義する場合に状態を報告できます。Herdr への組み込みや、認識済みのエージェント実行ファイルは必要ありません。
@@ -337,6 +339,18 @@ herdr integration install grok
 Herdr はデフォルトで `~/.grok` を使い、`GROK_HOME` が設定されていればそちらを使います。Grok の設定ディレクトリはあらかじめ存在している必要があります。Grok はそのディレクトリ内のすべての `hooks/*.json` ファイルを統合するため、インストールは Herdr の `SessionStart` エントリだけを含む `hooks/herdr.json` と `hooks/herdr-agent-state.sh`（Windows では `hooks/herdr-agent-state.ps1`）を書き込み、ほかのフックファイルには触れません。アンインストールは Herdr 所有のこの 2 ファイルだけを削除します。
 
 Grok がセッション開始イベントを発行した後、Herdr は報告されたセッション id を使って `grok --resume <id>` でペインを resume できます。
+
+## MiMo Code CLI
+
+MiMo Code プラグインをインストールします:
+
+```bash
+herdr integration install mimocode
+```
+
+MiMo Code は設定ディレクトリ内のプラグインを自動的に読み込みます。Herdr はデフォルトで `~/.config/mimocode` を使い、`MIMOCODE_CONFIG_DIR` が設定されていればそれを使います。ディレクトリは事前に存在している必要があります。インストールは `plugins/herdr-agent-state.js` を書き込み、アンインストールはそれを削除します。インストール後は MiMo Code を再起動してください。
+
+このプラグインは、`mimo run` またはローカルの MiMo Code TUI が Herdr ペイン内で実行されている間、ライフサイクル状態とセッション識別を報告します。MiMo Code 0.1.x はフル TUI から外部プラグインへセッションイベントを配信せず、外部 TUI プラグインも読み込まないため、現時点でのライフサイクル権威は `mimo run` が対象で、TUI はスクリーンマニフェスト検出が補完します。
 
 ## カスタムステータスラベル
 

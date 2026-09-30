@@ -65,10 +65,11 @@ pub enum Agent {
     Letta,
     Maki,
     Muse,
+    Mimocode,
 }
 
 impl Agent {
-    pub const ALL: [Self; 24] = [
+    pub const ALL: [Self; 25] = [
         Self::Pi,
         Self::Claude,
         Self::Codex,
@@ -93,9 +94,10 @@ impl Agent {
         Self::Letta,
         Self::Maki,
         Self::Muse,
+        Self::Mimocode,
     ];
 
-    pub const SCREEN_MANIFEST_AGENTS: [Self; 22] = [
+    pub const SCREEN_MANIFEST_AGENTS: [Self; 23] = [
         Self::Pi,
         Self::Claude,
         Self::Codex,
@@ -118,6 +120,7 @@ impl Agent {
         Self::Letta,
         Self::Maki,
         Self::Muse,
+        Self::Mimocode,
     ];
 }
 
@@ -147,6 +150,7 @@ pub fn agent_label(agent: Agent) -> &'static str {
         Agent::Letta => "letta",
         Agent::Maki => "maki",
         Agent::Muse => "muse",
+        Agent::Mimocode => "mimocode",
     }
 }
 
@@ -182,6 +186,7 @@ pub fn interactive_agent_executable(agent: Agent) -> &'static str {
         Agent::Letta => "letta",
         Agent::Maki => "maki",
         Agent::Muse => "muse",
+        Agent::Mimocode => "mimo",
     }
 }
 
@@ -222,6 +227,7 @@ fn lookup_agent(name: &str) -> Option<Agent> {
         "letta" | "letta-code" | "letta code" => Some(Agent::Letta),
         "maki" => Some(Agent::Maki),
         "muse" | "muse-code" | "muse-cli" => Some(Agent::Muse),
+        "mimocode" | "mimo-code" | "mimo code" | "mimo" => Some(Agent::Mimocode),
         _ if is_muse_versioned_binary(name) => Some(Agent::Muse),
         _ => None,
     }
@@ -956,6 +962,16 @@ mod tests {
             identify_agent(r"C:\Users\user\muse-bin-0.2.1-R1215.1.exe"),
             Some(Agent::Muse)
         );
+        assert_eq!(identify_agent("mimocode"), Some(Agent::Mimocode));
+        assert_eq!(identify_agent("mimocode.exe"), Some(Agent::Mimocode));
+        assert_eq!(identify_agent("mimo"), Some(Agent::Mimocode));
+        assert_eq!(identify_agent("mimo.exe"), Some(Agent::Mimocode));
+        assert_eq!(identify_agent("mimo-code"), Some(Agent::Mimocode));
+        assert_eq!(identify_agent("mimo code"), Some(Agent::Mimocode));
+        assert_eq!(
+            identify_agent("/Users/dev/.mimocode/bin/mimo"),
+            Some(Agent::Mimocode)
+        );
     }
 
     #[test]
@@ -984,6 +1000,9 @@ mod tests {
         assert_eq!(parse_agent_label("letta-code"), Some(Agent::Letta));
         assert_eq!(parse_agent_label("maki"), Some(Agent::Maki));
         assert_eq!(parse_agent_label("kilo-code"), Some(Agent::Kilo));
+        assert_eq!(parse_agent_label("mimocode"), Some(Agent::Mimocode));
+        assert_eq!(parse_agent_label("mimo"), Some(Agent::Mimocode));
+        assert_eq!(parse_agent_label("mimo-code"), Some(Agent::Mimocode));
     }
 
     #[test]
@@ -1029,6 +1048,7 @@ mod tests {
             (Agent::Letta, "letta"),
             (Agent::Maki, "maki"),
             (Agent::Muse, "muse"),
+            (Agent::Mimocode, "mimo"),
         ];
         assert_eq!(expected.len(), Agent::ALL.len());
         for (agent, executable) in expected {
@@ -1080,6 +1100,10 @@ mod tests {
         assert_eq!(identify_agent("muse-bin"), None);
         assert_eq!(identify_agent("muse-bin-"), None);
         assert_eq!(identify_agent("muse-binary"), None);
+        assert_eq!(identify_agent("mimo-helper"), None);
+        assert_eq!(identify_agent("mimocode-helper"), None);
+        assert_eq!(identify_agent("mimocode-plugin"), None);
+        assert_eq!(identify_agent("mimic"), None);
     }
 
     #[test]
@@ -1088,6 +1112,7 @@ mod tests {
         assert_eq!(identify_agent("CLAUDE"), Some(Agent::Claude));
         assert_eq!(identify_agent("Codex"), Some(Agent::Codex));
         assert_eq!(identify_agent("Devin"), Some(Agent::Devin));
+        assert_eq!(identify_agent("MiMoCode"), Some(Agent::Mimocode));
     }
 
     #[test]

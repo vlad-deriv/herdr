@@ -139,6 +139,10 @@ pub(crate) fn kilo_dir() -> io::Result<PathBuf> {
     Ok(home_dir()?.join(".config/kilo"))
 }
 
+pub(crate) fn mimocode_dir() -> io::Result<PathBuf> {
+    config_dir_from_env_or_home("MIMOCODE_CONFIG_DIR", &[".config", "mimocode"])
+}
+
 pub(crate) fn hermes_dir() -> io::Result<PathBuf> {
     if let Some(value) = std::env::var_os(HERMES_HOME_ENV_VAR).filter(|value| !value.is_empty()) {
         return expand_tilde_path(PathBuf::from(value));
